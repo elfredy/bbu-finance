@@ -1,0 +1,34 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+import { StudentModule } from './student/student.module';
+import { ExcelModule } from './excel/excel.module';
+import { PaymentModule } from './payment/payment.module';
+import { UnmatchedPaymentModule } from './unmatched-payment/unmatched-payment.module';
+import { Student } from './student/student.entity';
+import { Payment } from './payment/payment.entity';
+import { UnmatchedPayment } from './unmatched-payment/unmatched-payment.entity';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      username: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      database: process.env.DB_NAME || 'business_finance',
+      entities: [Student, Payment, UnmatchedPayment],
+      synchronize: true, // Development için - production'da false yapın
+      logging: false,
+    }),
+    StudentModule,
+    ExcelModule,
+    PaymentModule,
+    UnmatchedPaymentModule,
+  ],
+})
+export class AppModule {}
