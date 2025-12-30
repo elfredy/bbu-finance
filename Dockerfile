@@ -4,14 +4,14 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from backend
+COPY backend/package*.json ./
 
-# Install dependencies
-RUN npm install --production=false
+# Install dependencies (including devDependencies for build)
+RUN npm install
 
-# Copy source code
-COPY . .
+# Copy backend source code
+COPY backend/ ./
 
 # Build the application
 RUN npm run build
