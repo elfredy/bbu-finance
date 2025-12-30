@@ -1,6 +1,8 @@
 # 🚀 Deployment Kılavuzu (Türkçe)
 
-Projeyi Render (Backend) ve Vercel (Frontend) üzerinde deploy edebilirsiniz.
+Projeyi **Railway** (Backend) ve **Vercel** (Frontend) üzerinde deploy edebilirsiniz.
+
+> ⚠️ **Not:** Render free tier'de sadece 1 web service limiti var. Railway kullanmanızı öneririz (uyku modu yok, daha hızlı). Detaylı Railway kılavuzu için `RAILWAY_SETUP.md` dosyasına bakın.
 
 ## 📋 Adımlar
 
