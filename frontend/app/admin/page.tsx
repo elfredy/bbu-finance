@@ -31,6 +31,7 @@ export default function AdminPage() {
   const [selectedGroupForStudents, setSelectedGroupForStudents] = useState<string | null>(null);
   const [studentsInGroup, setStudentsInGroup] = useState<Student[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [uploadingExcel, setUploadingExcel] = useState(false);
 
   useEffect(() => {
     loadGroups();
@@ -174,6 +175,47 @@ export default function AdminPage() {
     }
   };
 
+  const handleExcelUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingExcel(true);
+    setMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axios.post(`${API_BASE_URL}/api/upload-students`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setMessage({
+        type: 'success',
+        text: `Başarılı! ${response.data.count} öğrenci yüklendi.`,
+      });
+
+      // Qrupları yeniden yükle
+      await loadGroups();
+
+      // 2 saniye sonra ana sayfaya yönlendir
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || error.message || 'Excel yükleme sırasında hata oluştu',
+      });
+    } finally {
+      setUploadingExcel(false);
+      // Input'u temizle
+      event.target.value = '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -188,7 +230,38 @@ export default function AdminPage() {
 
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Admin Paneli</h1>
-          <p className="text-lg text-gray-600">Qruplara İllik Məbləğ Təyin Et</p>
+          <p className="text-lg text-gray-600">Qruplara İllik Məbləğ Təyin Et və Tələbə Excel Dosyası Yüklə</p>
+        </div>
+
+        {/* Excel Yükleme Bölümü */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">📊 Tələbə Excel Dosyası Yüklə</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Tələbə bilgilerini içeren Excel dosyasını yükleyin. Dosyada FIN, Ad Soyad, Kurs, Qrup, Fakultə, İxtisas, Qəbul İli kolonları olmalıdır.
+          </p>
+          <div className="flex items-center gap-4">
+            <label className="flex-1">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleExcelUpload}
+                disabled={uploadingExcel}
+                className="hidden"
+                id="excel-upload"
+              />
+              <div
+                className={`w-full px-6 py-3 border-2 border-dashed rounded-lg cursor-pointer text-center transition-colors ${
+                  uploadingExcel
+                    ? 'border-gray-300 bg-gray-100 cursor-not-allowed'
+                    : 'border-indigo-300 bg-indigo-50 hover:border-indigo-500 hover:bg-indigo-100'
+                }`}
+              >
+                <span className="text-indigo-600 font-medium">
+                  {uploadingExcel ? 'Yükleniyor...' : '📤 Excel Dosyası Seç və Yüklə'}
+                </span>
+              </div>
+            </label>
+          </div>
         </div>
 
         {/* Mesaj gösterimi */}
