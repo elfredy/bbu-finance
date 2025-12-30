@@ -236,7 +236,7 @@ export class ExcelService {
 
       // FIN bazlı ödeme verilerini topla
       const paymentMap = new Map<string, Array<{ amount: number; paymentDate: Date; bankUniqueId: string | null; rowData: any }>>();
-      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; paymentRefNum: string | null; rowData: any }> = [];
+      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; paymentRefNum: string | null; bankUniqueId: string | null; rowData: any }> = [];
 
       jsonData.forEach((row: any) => {
         const fin = row[senderDocumentDataColumn]?.toString().trim().toUpperCase();
@@ -295,6 +295,7 @@ export class ExcelService {
               amount,
               paymentDate,
               paymentRefNum,
+              bankUniqueId,
               rowData: row,
             });
           }
@@ -375,6 +376,7 @@ export class ExcelService {
               amount: payment.amount,
               paymentDate: payment.paymentDate,
               paymentRefNum,
+              bankUniqueId: payment.bankUniqueId,
               rowData: payment.rowData,
             });
           }
@@ -450,6 +452,7 @@ export class ExcelService {
           amount: up.amount,
           paymentDate: up.paymentDate,
           paymentRefNum: up.paymentRefNum,
+          bankUniqueId: up.bankUniqueId,
           paymentData: up.rowData,
         }));
         const saved = await this.unmatchedPaymentService.createMany(unmatchedToSave);
@@ -502,7 +505,7 @@ export class ExcelService {
         senderName: string | null;
         rowData: any;
       }>>();
-      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; paymentRefNum: string | null; rowData: any }> = [];
+      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; paymentRefNum: string | null; bankUniqueId: string | null; rowData: any }> = [];
 
       jsonData.forEach((row: any) => {
         // JSON formatında: SenderDocData -> FIN
@@ -530,6 +533,7 @@ export class ExcelService {
               amount,
               paymentDate,
               paymentRefNum,
+              bankUniqueId,
               rowData: row,
             });
           }
@@ -567,6 +571,8 @@ export class ExcelService {
           for (const payment of payments) {
             // PaymentRefNum bul
             const paymentRefNum = payment.rowData.PaymentRefNum?.toString().trim() || null;
+            // BankUniqueId bul
+            const bankUniqueId = payment.rowData.BankUniqueId?.toString().trim() || payment.bankUniqueId || null;
             
             unmatchedPayments.push({
               fin,
@@ -574,6 +580,7 @@ export class ExcelService {
               amount: payment.amount,
               paymentDate: payment.paymentDate,
               paymentRefNum,
+              bankUniqueId,
               rowData: payment.rowData,
             });
           }
@@ -640,6 +647,7 @@ export class ExcelService {
           amount: up.amount,
           paymentDate: up.paymentDate,
           paymentRefNum: up.paymentRefNum,
+          bankUniqueId: up.bankUniqueId,
           paymentData: up.rowData,
         }));
         const saved = await this.unmatchedPaymentService.createMany(unmatchedToSave);

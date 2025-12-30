@@ -5,9 +5,12 @@ import { StudentModule } from './student/student.module';
 import { ExcelModule } from './excel/excel.module';
 import { PaymentModule } from './payment/payment.module';
 import { UnmatchedPaymentModule } from './unmatched-payment/unmatched-payment.module';
+import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 import { Student } from './student/student.entity';
 import { Payment } from './payment/payment.entity';
 import { UnmatchedPayment } from './unmatched-payment/unmatched-payment.entity';
+import { User } from './user/user.entity';
 
 @Module({
   imports: [
@@ -21,10 +24,12 @@ import { UnmatchedPayment } from './unmatched-payment/unmatched-payment.entity';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'business_finance',
-      entities: [Student, Payment, UnmatchedPayment],
+      entities: [Student, Payment, UnmatchedPayment, User],
       synchronize: true, // Development için - production'da false yapın
       logging: false,
     }),
+    UserModule,
+    AuthModule,
     StudentModule,
     ExcelModule,
     PaymentModule,

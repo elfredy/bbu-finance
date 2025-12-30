@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import api from '@/lib/api';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface Group {
   qrup: string;
@@ -20,6 +20,14 @@ interface Student {
 }
 
 export default function AdminPage() {
+  return (
+    <ProtectedRoute requireSuperAdmin>
+      <AdminPageContent />
+    </ProtectedRoute>
+  );
+}
+
+function AdminPageContent() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -40,7 +48,7 @@ export default function AdminPage() {
   const loadGroups = async () => {
     setLoadingGroups(true);
     try {
-      const response = await axios.get<Group[]>(`${API_BASE_URL}/api/students/groups`);
+      const response = await api.get<Group[]>('/api/students/groups');
       setGroups(response.data);
     } catch (error) {
       console.error('Qruplar yüklenemedi:', error);
@@ -66,7 +74,7 @@ export default function AdminPage() {
     setMessage(null);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/students/groups/update-illik`, {
+      const response = await api.post('/api/students/groups/update-illik', {
         qrup: selectedGroup,
         mebleg: meblegValue,
       });
@@ -102,7 +110,7 @@ export default function AdminPage() {
     setMessage(null);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/students/groups/toggle-active`, {
+      const response = await api.post('/api/students/groups/toggle-active', {
         qrup,
         active: !currentActive,
       });
@@ -132,7 +140,7 @@ export default function AdminPage() {
   const loadStudentsInGroup = async (qrup: string) => {
     setLoadingStudents(true);
     try {
-      const response = await axios.get<Student[]>(`${API_BASE_URL}/api/students/groups/${encodeURIComponent(qrup)}/students`);
+      const response = await api.get<Student[]>(`/api/students/groups/${encodeURIComponent(qrup)}/students`);
       setStudentsInGroup(response.data);
       setSelectedGroupForStudents(qrup);
     } catch (error) {
@@ -148,7 +156,7 @@ export default function AdminPage() {
     setMessage(null);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/students/toggle-active`, {
+      const response = await api.post('/api/students/toggle-active', {
         studentId,
         active: !currentActive,
       });
@@ -186,7 +194,7 @@ export default function AdminPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post(`${API_BASE_URL}/api/upload-students`, formData, {
+      const response = await api.post('/api/upload-students', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

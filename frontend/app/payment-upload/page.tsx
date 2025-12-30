@@ -1,13 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import api from '@/lib/api';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function PaymentUploadPage() {
+  return (
+    <ProtectedRoute requireSuperAdmin={true}>
+      <PaymentUploadPageContent />
+    </ProtectedRoute>
+  );
+}
+
+function PaymentUploadPageContent() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, fileType: 'excel' | 'json' = 'excel') => {
@@ -22,7 +31,7 @@ export default function PaymentUploadPage() {
     formData.append('fileType', fileType);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/payments/upload`, formData, {
+      const response = await api.post('/api/payments/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -57,6 +66,30 @@ export default function PaymentUploadPage() {
     }
   };
 
+  const handleClearPayments = async () => {
+    if (!confirm('Bütün ödəniş kayıtlarını silmək istədiyinizə əminsiniz? Bu əməliyyat geri alına bilməz!')) {
+      return;
+    }
+
+    setClearing(true);
+    setMessage(null);
+
+    try {
+      const response = await api.delete('/api/payments/clear');
+      setMessage({
+        type: 'success',
+        text: response.data.message || 'Bütün ödəniş kayıtları uğurla silindi',
+      });
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Ödemeler temizlenirken hata oluştu',
+      });
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -71,7 +104,14 @@ export default function PaymentUploadPage() {
 
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Ödəniş Dosyası Yüklə</h1>
-          <p className="text-lg text-gray-600">Excel veya JSON dosyasında SENDER_DOCUMENT_DATA ile FIN eşleştirmesi yapılacak</p>
+          <p className="text-lg text-gray-600 mb-4">Excel veya JSON dosyasında SENDER_DOCUMENT_DATA ile FIN eşleştirmesi yapılacak</p>
+          <button
+            onClick={handleClearPayments}
+            disabled={clearing || loading}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {clearing ? 'Təmizlənir...' : '🗑️ Bütün Ödənişləri Təmizlə'}
+          </button>
         </div>
 
         {/* Mesaj gösterimi */}

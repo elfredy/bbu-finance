@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import Link from 'next/link';
-import { API_BASE_URL } from '@/lib/api';
+import api from '@/lib/api';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface UnmatchedPayment {
   id: number;
@@ -16,8 +16,17 @@ interface UnmatchedPayment {
 }
 
 export default function UnmatchedPaymentsPage() {
+  return (
+    <ProtectedRoute requireSuperAdmin={true}>
+      <UnmatchedPaymentsPageContent />
+    </ProtectedRoute>
+  );
+}
+
+function UnmatchedPaymentsPageContent() {
   const [payments, setPayments] = useState<UnmatchedPayment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [editingFin, setEditingFin] = useState<number | null>(null);
   const [finInput, setFinInput] = useState('');
@@ -30,7 +39,7 @@ export default function UnmatchedPaymentsPage() {
   const loadUnmatchedPayments = async () => {
     setLoading(true);
     try {
-      const response = await axios.get<UnmatchedPayment[]>(`${API_BASE_URL}/api/unmatched-payments`);
+      const response = await api.get<UnmatchedPayment[]>('/api/unmatched-payments');
       setPayments(response.data);
     } catch (error) {
       console.error('Eşleşmeyen ödemeler yüklenemedi:', error);
@@ -57,7 +66,7 @@ export default function UnmatchedPaymentsPage() {
 
     setFinLoading(true);
     try {
-      await axios.patch(`${API_BASE_URL}/api/unmatched-payments/${id}/fin`, {
+      await api.patch(`/api/unmatched-payments/${id}/fin`, {
         fin: finInput.trim().toUpperCase(),
       });
       await loadUnmatchedPayments();
@@ -72,6 +81,24 @@ export default function UnmatchedPaymentsPage() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!confirm('Bütün eşleşməyən ödənişləri silmək istədiyinizə əminsiniz? Bu əməliyyat geri alına bilməz!')) {
+      return;
+    }
+
+    setClearing(true);
+    try {
+      await api.delete('/api/unmatched-payments/clear');
+      await loadUnmatchedPayments();
+      alert('Bütün eşleşməyən ödənişlər uğurla silindi');
+    } catch (error: any) {
+      console.error('Eşleşmeyen ödemeler temizlenemedi:', error);
+      alert(error.response?.data?.message || 'Eşleşmeyen ödemeler temizlenemedi');
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -83,7 +110,7 @@ export default function UnmatchedPaymentsPage() {
           <p className="text-lg text-gray-600 mb-4">
             Eşleşməyən Ödənişlər
           </p>
-          <div className="flex justify-center gap-4 flex-wrap">
+          <div className="flex justify-center gap-4 flex-wrap mb-4">
             <Link
               href="/"
               className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
@@ -103,6 +130,13 @@ export default function UnmatchedPaymentsPage() {
               💳 Ödəniş Dosyası Yüklə
             </Link>
           </div>
+          <button
+            onClick={handleClearAll}
+            disabled={clearing || loading}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {clearing ? 'Təmizlənir...' : '🗑️ Eşleşməyən Ödənişləri Təmizlə'}
+          </button>
         </div>
 
         {/* Info Card */}

@@ -1,7 +1,10 @@
-import { Controller, Get, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
 import { UnmatchedPaymentService } from './unmatched-payment.service';
 import { StudentService } from '../student/student.service';
 import { PaymentService } from '../payment/payment.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
+import { UserRole } from '../user/user.entity';
 
 @Controller('api/unmatched-payments')
 export class UnmatchedPaymentController {
@@ -12,11 +15,15 @@ export class UnmatchedPaymentController {
   ) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPERADMIN)
   async getAll() {
     return this.unmatchedPaymentService.findAll();
   }
 
   @Patch(':id/fin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPERADMIN)
   async updateFin(@Param('id') id: number, @Body() body: { fin: string }) {
     const { fin } = body;
     if (!fin || fin.trim() === '') {
@@ -48,5 +55,23 @@ export class UnmatchedPaymentController {
     }
 
     return updatedPayment;
+  }
+
+  @Delete('clear')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPERADMIN)
+  async clearAll() {
+    try {
+      await this.unmatchedPaymentService.clearAll();
+      return {
+        success: true,
+        message: 'Bütün eşleşməyən ödənişlər silindi',
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Eşleşmeyen ödemeler temizlenirken hata oluştu',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

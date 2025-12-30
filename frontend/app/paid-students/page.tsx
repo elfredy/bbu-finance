@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import Link from 'next/link';
-import { API_BASE_URL } from '@/lib/api';
+import api from '@/lib/api';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface Student {
   id: number;
@@ -43,6 +43,14 @@ interface FilterOptions {
 }
 
 export default function PaidStudentsPage() {
+  return (
+    <ProtectedRoute requireSuperAdmin={true}>
+      <PaidStudentsPageContent />
+    </ProtectedRoute>
+  );
+}
+
+function PaidStudentsPageContent() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -111,7 +119,7 @@ export default function PaidStudentsPage() {
 
   const loadFilterOptions = async () => {
     try {
-      const response = await axios.get<FilterOptions>(`${API_BASE_URL}/api/students/filter-options`);
+      const response = await api.get<FilterOptions>('/api/students/filter-options');
       setFilterOptions(response.data);
     } catch (error) {
       console.error('Filtre seçenekleri alınamadı:', error);
@@ -132,7 +140,7 @@ export default function PaidStudentsPage() {
       // Sadece ödemesi olan öğrencileri getir
       params.append('onlyWithPayments', 'true');
 
-      const response = await axios.get<StudentsResponse>(`${API_BASE_URL}/api/students?${params.toString()}`);
+      const response = await api.get<StudentsResponse>(`/api/students?${params.toString()}`);
       
       setStudents(response.data.data);
       setPagination(response.data.pagination);
@@ -172,7 +180,7 @@ export default function PaidStudentsPage() {
       // Eğer payment'lar yüklenmemişse yükle
       if (!paymentsMap.has(studentId)) {
         try {
-          const response = await axios.get<Payment[]>(`${API_BASE_URL}/api/students/${studentId}/payments`);
+          const response = await api.get<Payment[]>(`/api/students/${studentId}/payments`);
           setPaymentsMap(prev => new Map(prev).set(studentId, response.data));
         } catch (error) {
           console.error('Payment detayları yüklenemedi:', error);

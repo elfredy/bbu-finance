@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import Link from 'next/link';
-import { API_BASE_URL } from '@/lib/api';
+import api from '@/lib/api';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { getUser, logout, isSuperAdmin } from '@/lib/auth';
 
 interface Student {
   id: number;
@@ -43,6 +44,14 @@ interface FilterOptions {
 }
 
 export default function Home() {
+  return (
+    <ProtectedRoute allowBbuFinance={true}>
+      <HomeContent />
+    </ProtectedRoute>
+  );
+}
+
+function HomeContent() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -66,6 +75,10 @@ export default function Home() {
   });
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [paymentsMap, setPaymentsMap] = useState<Map<number, Payment[]>>(new Map());
+  
+  // User ve role kontrolü
+  const user = getUser();
+  const userIsSuperAdmin = isSuperAdmin();
 
   // Borc ve əlavə ödəniş hesaplama fonksiyonu
   const calculateDebtAndExtra = (odemisMeblegi: number | null, illik: string | null) => {
@@ -111,7 +124,7 @@ export default function Home() {
 
   const loadFilterOptions = async () => {
     try {
-      const response = await axios.get<FilterOptions>(`${API_BASE_URL}/api/students/filter-options`);
+      const response = await api.get<FilterOptions>('/api/students/filter-options');
       setFilterOptions(response.data);
     } catch (error) {
       console.error('Filtre seçenekleri alınamadı:', error);
@@ -130,7 +143,7 @@ export default function Home() {
       params.append('page', pagination.page.toString());
       params.append('limit', pagination.limit.toString());
 
-      const response = await axios.get<StudentsResponse>(`${API_BASE_URL}/api/students?${params.toString()}`);
+      const response = await api.get<StudentsResponse>(`/api/students?${params.toString()}`);
       
       setStudents(response.data.data);
       setPagination(response.data.pagination);
@@ -170,7 +183,7 @@ export default function Home() {
       // Eğer payment'lar yüklenmemişse yükle
       if (!paymentsMap.has(studentId)) {
         try {
-          const response = await axios.get<Payment[]>(`${API_BASE_URL}/api/students/${studentId}/payments`);
+          const response = await api.get<Payment[]>(`/api/students/${studentId}/payments`);
           setPaymentsMap(prev => new Map(prev).set(studentId, response.data));
         } catch (error) {
           console.error('Payment detayları yüklenemedi:', error);
@@ -192,30 +205,44 @@ export default function Home() {
             Tələbə Məlumatları
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <Link
-              href="/paid-students"
-              className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
-            >
-              💰 Ödəniş Edən Tələbələr
-            </Link>
-            <Link
-              href="/admin"
-              className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
-            >
-              ⚙️ Admin Paneli
-            </Link>
-            <Link
-              href="/payment-upload"
-              className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
-            >
-              💳 Ödəniş Dosyası Yüklə
-            </Link>
-            <Link
-              href="/unmatched-payments"
-              className="inline-block bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
-            >
-              ⚠️ Eşleşməyən Ödənişlər
-            </Link>
+            {userIsSuperAdmin && (
+              <Link
+                href="/paid-students"
+                className="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
+              >
+                💰 Ödəniş Edən Tələbələr
+              </Link>
+            )}
+            {userIsSuperAdmin && (
+              <>
+                <Link
+                  href="/admin"
+                  className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
+                >
+                  ⚙️ Admin Paneli
+                </Link>
+                <Link
+                  href="/payment-upload"
+                  className="inline-block bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
+                >
+                  💳 Ödəniş Dosyası Yüklə
+                </Link>
+                <Link
+                  href="/unmatched-payments"
+                  className="inline-block bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
+                >
+                  ⚠️ Eşleşməyən Ödənişlər
+                </Link>
+              </>
+            )}
+            {user && (
+              <button
+                onClick={logout}
+                className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md"
+              >
+                🚪 Çıxış
+              </button>
+            )}
           </div>
         </div>
 

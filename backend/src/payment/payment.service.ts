@@ -63,4 +63,14 @@ export class PaymentService {
 
     return parseFloat(result?.total || '0');
   }
+
+  async clearAll(): Promise<{ deleted: number }> {
+    const result = await this.paymentRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Payment)
+      .execute();
+
+    return { deleted: result.affected || 0 };
+  }
 }

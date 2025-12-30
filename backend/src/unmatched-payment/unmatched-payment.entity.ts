@@ -3,6 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 
 @Entity('unmatched_payments')
 @Index(['fin'])
 @Index(['paymentRefNum'])
+@Index(['bankUniqueId'])
 export class UnmatchedPayment {
   @PrimaryGeneratedColumn()
   id: number;
@@ -21,6 +22,9 @@ export class UnmatchedPayment {
 
   @Column({ nullable: true, unique: true })
   paymentRefNum: string; // PaymentRefNum - duplicate kontrolü için
+
+  @Column({ nullable: true, unique: true })
+  bankUniqueId: string; // BankUniqueId - duplicate kontrolü için
 
   @Column({ type: 'jsonb', nullable: true })
   paymentData: any; // Orijinal Excel satırı

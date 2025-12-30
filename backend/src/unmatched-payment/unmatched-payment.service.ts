@@ -15,20 +15,36 @@ export class UnmatchedPaymentService {
       return [];
     }
 
-    // PaymentRefNum ile duplicate kontrolü yap
+    // PaymentRefNum ve BankUniqueId ile duplicate kontrolü yap
     const uniquePayments: Partial<UnmatchedPayment>[] = [];
     for (const payment of payments) {
+      let shouldSkip = false;
+
+      // PaymentRefNum ile kontrol et
       if (payment.paymentRefNum) {
-        // PaymentRefNum ile kontrol et
-        const existing = await this.unmatchedPaymentRepository.findOne({
+        const existingByRefNum = await this.unmatchedPaymentRepository.findOne({
           where: { paymentRefNum: payment.paymentRefNum },
         });
-        if (existing) {
+        if (existingByRefNum) {
           console.log(`⏭️ PaymentRefNum zaten var, atlanıyor: ${payment.paymentRefNum}`);
-          continue; // Bu ödemeyi atla
+          shouldSkip = true;
         }
       }
-      uniquePayments.push(payment);
+
+      // BankUniqueId ile kontrol et
+      if (!shouldSkip && payment.bankUniqueId) {
+        const existingByBankId = await this.unmatchedPaymentRepository.findOne({
+          where: { bankUniqueId: payment.bankUniqueId },
+        });
+        if (existingByBankId) {
+          console.log(`⏭️ BankUniqueId zaten var, atlanıyor: ${payment.bankUniqueId}`);
+          shouldSkip = true;
+        }
+      }
+
+      if (!shouldSkip) {
+        uniquePayments.push(payment);
+      }
     }
 
     if (uniquePayments.length === 0) {
