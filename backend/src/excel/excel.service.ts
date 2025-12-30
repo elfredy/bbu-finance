@@ -165,8 +165,7 @@ export class ExcelService {
     message: string;
   }> {
     try {
-      // Önce eşleşmeyen kayıtları temizle
-      await this.unmatchedPaymentService.clearAll();
+      // Eşleşmeyen kayıtları temizleme - artık tüm kayıtları saklıyoruz
       
       // Excel dosyasını oku
       const workbook = XLSX.read(file.buffer, { type: 'buffer' });
@@ -216,6 +215,7 @@ export class ExcelService {
       const paymentDateColumn = findColumn(['payment_date', 'paymentdate', 'date', 'tarih', 'tarix']);
       const senderNameColumn = findColumn(['sender_name', 'sendername', 'ad', 'name']);
       const bankUniqueIdColumn = findColumn(['bank_unique_id', 'bankuniqueid', 'unique_id', 'uniqueid']);
+      const paymentRefNumColumn = findColumn(['payment_ref_num', 'paymentrefnum', 'ref_num', 'refnum']);
 
       console.log('🔍 Bulunan payment kolonlar:', {
         senderDocumentData: senderDocumentDataColumn,
@@ -223,6 +223,7 @@ export class ExcelService {
         paymentDate: paymentDateColumn,
         senderName: senderNameColumn,
         bankUniqueId: bankUniqueIdColumn,
+        paymentRefNum: paymentRefNumColumn,
       });
 
       if (!senderDocumentDataColumn) {
@@ -235,7 +236,7 @@ export class ExcelService {
 
       // FIN bazlı ödeme verilerini topla
       const paymentMap = new Map<string, Array<{ amount: number; paymentDate: Date; bankUniqueId: string | null; rowData: any }>>();
-      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; rowData: any }> = [];
+      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; paymentRefNum: string | null; rowData: any }> = [];
 
       jsonData.forEach((row: any) => {
         const fin = row[senderDocumentDataColumn]?.toString().trim().toUpperCase();
@@ -244,6 +245,12 @@ export class ExcelService {
         let bankUniqueId: string | null = null;
         if (bankUniqueIdColumn && row[bankUniqueIdColumn]) {
           bankUniqueId = row[bankUniqueIdColumn]?.toString().trim() || null;
+        }
+        
+        // PaymentRefNum parse et
+        let paymentRefNum: string | null = null;
+        if (paymentRefNumColumn && row[paymentRefNumColumn]) {
+          paymentRefNum = row[paymentRefNumColumn]?.toString().trim() || null;
         }
         
         // FIN yoksa veya boşsa eşleşmeyen olarak işaretle
@@ -287,6 +294,7 @@ export class ExcelService {
               senderName,
               amount,
               paymentDate,
+              paymentRefNum,
               rowData: row,
             });
           }
@@ -355,11 +363,18 @@ export class ExcelService {
               senderName = payment.rowData[senderNameColumn]?.toString().trim() || null;
             }
 
+            // PaymentRefNum bul
+            let paymentRefNum: string | null = null;
+            if (paymentRefNumColumn && payment.rowData[paymentRefNumColumn]) {
+              paymentRefNum = payment.rowData[paymentRefNumColumn]?.toString().trim() || null;
+            }
+
             unmatchedPayments.push({
               fin,
               senderName,
               amount: payment.amount,
               paymentDate: payment.paymentDate,
+              paymentRefNum,
               rowData: payment.rowData,
             });
           }
@@ -434,11 +449,12 @@ export class ExcelService {
           senderName: up.senderName,
           amount: up.amount,
           paymentDate: up.paymentDate,
+          paymentRefNum: up.paymentRefNum,
           paymentData: up.rowData,
         }));
-        await this.unmatchedPaymentService.createMany(unmatchedToSave);
-        unmatchedCount = unmatchedPayments.length;
-        console.log(`⚠️ ${unmatchedCount} eşleşmeyen kayıt kaydedildi`);
+        const saved = await this.unmatchedPaymentService.createMany(unmatchedToSave);
+        unmatchedCount = saved.length;
+        console.log(`⚠️ ${unmatchedCount} eşleşmeyen kayıt kaydedildi (${unmatchedPayments.length - unmatchedCount} duplicate atlandı)`);
       }
 
       console.log(`✅ ${matchedCount} öğrenci eşleştirildi, ${totalPayments} ödeme kaydedildi, ${skippedCount} ödeme atlandı (duplicate), ${unmatchedCount} eşleşmeyen kayıt`);
@@ -466,8 +482,7 @@ export class ExcelService {
     message: string;
   }> {
     try {
-      // Önce eşleşmeyen kayıtları temizle
-      await this.unmatchedPaymentService.clearAll();
+      // Eşleşmeyen kayıtları temizleme - artık tüm kayıtları saklıyoruz
       
       // JSON dosyasını parse et
       const jsonString = file.buffer.toString('utf-8');
@@ -487,12 +502,13 @@ export class ExcelService {
         senderName: string | null;
         rowData: any;
       }>>();
-      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; rowData: any }> = [];
+      const unmatchedPayments: Array<{ fin: string | null; senderName: string | null; amount: number; paymentDate: Date; paymentRefNum: string | null; rowData: any }> = [];
 
       jsonData.forEach((row: any) => {
         // JSON formatında: SenderDocData -> FIN
         const fin = row.SenderDocData?.toString().trim().toUpperCase();
         const bankUniqueId = row.BankUniqueId?.toString().trim() || null;
+        const paymentRefNum = row.PaymentRefNum?.toString().trim() || null;
         const amount = typeof row.Amount === 'number' ? row.Amount : parseFloat(row.Amount || '0');
         const senderName = row.SenderName?.toString().trim() || null;
         
@@ -513,6 +529,7 @@ export class ExcelService {
               senderName,
               amount,
               paymentDate,
+              paymentRefNum,
               rowData: row,
             });
           }
@@ -548,11 +565,15 @@ export class ExcelService {
           console.log(`⚠️ FIN bulunamadı: ${normalizedFin}`);
           // Eşleşmeyen olarak kaydet
           for (const payment of payments) {
+            // PaymentRefNum bul
+            const paymentRefNum = payment.rowData.PaymentRefNum?.toString().trim() || null;
+            
             unmatchedPayments.push({
               fin,
               senderName: payment.senderName,
               amount: payment.amount,
               paymentDate: payment.paymentDate,
+              paymentRefNum,
               rowData: payment.rowData,
             });
           }
@@ -618,11 +639,12 @@ export class ExcelService {
           senderName: up.senderName,
           amount: up.amount,
           paymentDate: up.paymentDate,
+          paymentRefNum: up.paymentRefNum,
           paymentData: up.rowData,
         }));
-        await this.unmatchedPaymentService.createMany(unmatchedToSave);
-        unmatchedCount = unmatchedPayments.length;
-        console.log(`⚠️ ${unmatchedCount} eşleşmeyen kayıt kaydedildi`);
+        const saved = await this.unmatchedPaymentService.createMany(unmatchedToSave);
+        unmatchedCount = saved.length;
+        console.log(`⚠️ ${unmatchedCount} eşleşmeyen kayıt kaydedildi (${unmatchedPayments.length - unmatchedCount} duplicate atlandı)`);
       }
 
       console.log(`✅ ${matchedCount} öğrenci eşleştirildi, ${totalPayments} ödeme kaydedildi, ${skippedCount} ödeme atlandı (duplicate), ${unmatchedCount} eşleşmeyen kayıt`);

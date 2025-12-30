@@ -18,6 +18,10 @@ interface UnmatchedPayment {
 export default function UnmatchedPaymentsPage() {
   const [payments, setPayments] = useState<UnmatchedPayment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [editingFin, setEditingFin] = useState<number | null>(null);
+  const [finInput, setFinInput] = useState('');
+  const [finLoading, setFinLoading] = useState(false);
 
   useEffect(() => {
     loadUnmatchedPayments();
@@ -32,6 +36,39 @@ export default function UnmatchedPaymentsPage() {
       console.error('Eşleşmeyen ödemeler yüklenemedi:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleRow = (id: number) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const handleAddFin = async (id: number) => {
+    if (!finInput.trim()) {
+      alert('FIN daxil edin');
+      return;
+    }
+
+    setFinLoading(true);
+    try {
+      await axios.patch(`${API_BASE_URL}/api/unmatched-payments/${id}/fin`, {
+        fin: finInput.trim().toUpperCase(),
+      });
+      await loadUnmatchedPayments();
+      setEditingFin(null);
+      setFinInput('');
+      alert('FIN uğurla əlavə edildi');
+    } catch (error: any) {
+      console.error('FIN əlavə edilə bilmədi:', error);
+      alert(error.response?.data?.message || 'FIN əlavə edilə bilmədi');
+    } finally {
+      setFinLoading(false);
     }
   };
 
@@ -102,7 +139,7 @@ export default function UnmatchedPaymentsPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
                       #
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -117,28 +154,120 @@ export default function UnmatchedPaymentsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Tarix
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      Əməliyyatlar
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {payments.map((payment, index) => (
-                    <tr key={payment.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {payment.fin || <span className="text-red-600">FIN yoxdur</span>}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {payment.senderName || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                        {Number(payment.amount).toFixed(2)} ₼
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString('az-AZ') : '-'}
-                      </td>
-                    </tr>
-                  ))}
+                  {payments.map((payment, index) => {
+                    const isExpanded = expandedRows.has(payment.id);
+                    const isEditing = editingFin === payment.id;
+                    const paymentDesc1 = payment.paymentData?.PaymentDesc1 || payment.paymentData?.payment_desc1 || '';
+                    const paymentDesc2 = payment.paymentData?.PaymentDesc2 || payment.paymentData?.payment_desc2 || '';
+                    const hasDescription = paymentDesc1 || paymentDesc2;
+
+                    return (
+                      <>
+                        <tr key={payment.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {payment.fin || <span className="text-red-600">FIN yoxdur</span>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {payment.senderName || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                            {Number(payment.amount).toFixed(2)} ₼
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString('az-AZ') : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex gap-2">
+                              {hasDescription && (
+                                <button
+                                  onClick={() => toggleRow(payment.id)}
+                                  className="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  {isExpanded ? '📖 Bağla' : '📄 Aç'}
+                                </button>
+                              )}
+                              {!payment.fin && (
+                                <button
+                                  onClick={() => {
+                                    setEditingFin(payment.id);
+                                    setFinInput('');
+                                  }}
+                                  className="text-green-600 hover:text-green-800 font-medium"
+                                >
+                                  ➕ FIN əlavə et
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                        {isExpanded && hasDescription && (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-4 bg-gray-50">
+                              <div className="space-y-2">
+                                {paymentDesc1 && (
+                                  <div>
+                                    <strong className="text-gray-700">PaymentDesc1:</strong>
+                                    <p className="text-sm text-gray-600 mt-1 break-all">{paymentDesc1}</p>
+                                  </div>
+                                )}
+                                {paymentDesc2 && (
+                                  <div>
+                                    <strong className="text-gray-700">PaymentDesc2:</strong>
+                                    <p className="text-sm text-gray-600 mt-1 break-all">{paymentDesc2}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        {isEditing && (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-4 bg-blue-50">
+                              <div className="flex gap-2 items-center">
+                                <input
+                                  type="text"
+                                  value={finInput}
+                                  onChange={(e) => setFinInput(e.target.value)}
+                                  placeholder="FIN daxil edin"
+                                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleAddFin(payment.id);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  onClick={() => handleAddFin(payment.id)}
+                                  disabled={finLoading}
+                                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {finLoading ? 'Yüklənir...' : 'Yadda saxla'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingFin(null);
+                                    setFinInput('');
+                                  }}
+                                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                                >
+                                  Ləğv et
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
