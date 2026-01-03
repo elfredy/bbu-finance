@@ -25,8 +25,8 @@ import { User } from './user/user.entity';
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'business_finance',
       entities: [Student, Payment, UnmatchedPayment, User],
-      synchronize: true, // Development için - production'da false yapın
-      logging: false,
+      synchronize: process.env.NODE_ENV !== 'production', // Production'da false olmalı
+      logging: process.env.NODE_ENV === 'development',
     }),
     UserModule,
     AuthModule,

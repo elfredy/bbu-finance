@@ -170,3 +170,4 @@ https://business-finance-backend.onrender.com
 - **Backend API Docs:** Swagger/Postman collection eklenebilir
 - **Frontend:** Next.js App Router kullanıyor
 
+

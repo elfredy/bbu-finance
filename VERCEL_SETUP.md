@@ -70,3 +70,4 @@ Deploy tamamlandıktan sonra:
 3. Backend service → Environment Variables
 4. `ALLOWED_ORIGINS` değerini frontend URL'iniz ile güncelleyin
 
+

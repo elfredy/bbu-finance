@@ -101,3 +101,4 @@ Eğer Railway ayarları çalışmıyorsa, proje root'una bir `railway.json` dosy
 - [ ] Service yeniden deploy oldu mu?
 - [ ] Log'larda hala `cd backend` görünüyor mu?
 
+

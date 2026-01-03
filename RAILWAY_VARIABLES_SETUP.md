@@ -120,3 +120,4 @@ Raw Editor'de şunları ekleyin:
 - Raw Editor'ü kullanarak manuel ekleyin
 - Tüm variable'ları bir kerede ekleyin (JSON formatında)
 
+

@@ -86,3 +86,4 @@ Değişiklikten sonra log'larda şunu görmelisiniz:
 
 Database connection error'u artık görünmemeli.
 
+

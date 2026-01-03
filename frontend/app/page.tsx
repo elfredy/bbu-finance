@@ -75,6 +75,7 @@ function HomeContent() {
   });
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [paymentsMap, setPaymentsMap] = useState<Map<number, Payment[]>>(new Map());
+  const [totals, setTotals] = useState<{ totalIllik: number; totalOdemis: number; totalBorc: number } | null>(null);
   
   // User ve role kontrolü
   const user = getUser();
@@ -97,20 +98,24 @@ function HomeContent() {
     return { borc, elaveOdemis };
   };
 
-  // Toplam illik ve toplam borç hesaplama
+  // Toplam illik, toplam borç ve toplam ödəniş hesaplama
   const calculateTotals = () => {
     let totalIllik = 0;
     let totalBorc = 0;
+    let totalOdemis = 0;
     
     students.forEach((student) => {
       const illikValue = student.illik ? parseFloat(student.illik) : 0;
       totalIllik += illikValue;
       
+      const odemisValue = student.odemisMeblegi ? Number(student.odemisMeblegi) : 0;
+      totalOdemis += odemisValue;
+      
       const { borc } = calculateDebtAndExtra(student.odemisMeblegi, student.illik);
       totalBorc += borc;
     });
     
-    return { totalIllik, totalBorc };
+    return { totalIllik, totalBorc, totalOdemis };
   };
 
   useEffect(() => {
@@ -147,6 +152,17 @@ function HomeContent() {
       
       setStudents(response.data.data);
       setPagination(response.data.pagination);
+
+      // Tüm filtrelenmiş öğrenciler için toplamları yükle
+      const totalsParams = new URLSearchParams();
+      if (filters.kurs) totalsParams.append('kurs', filters.kurs);
+      if (filters.qrup) totalsParams.append('qrup', filters.qrup);
+      if (filters.fakulte) totalsParams.append('fakulte', filters.fakulte);
+      if (filters.qebulIli) totalsParams.append('qebulIli', filters.qebulIli);
+      if (filters.fin) totalsParams.append('fin', filters.fin);
+
+      const totalsResponse = await api.get<{ totalIllik: number; totalOdemis: number; totalBorc: number }>(`/api/students/totals?${totalsParams.toString()}`);
+      setTotals(totalsResponse.data);
     } catch (error: any) {
       console.error('Tələbələr yüklenemedi:', error);
     } finally {
@@ -247,44 +263,33 @@ function HomeContent() {
         </div>
 
         {/* Info Card */}
-        {pagination.total > 0 && (() => {
-          // Tüm öğrenciler için toplam hesaplama (backend'den alınacak, şimdilik sayfalı veri için)
-          const allStudents = students;
-          let totalIllik = 0;
-          let totalBorc = 0;
-          
-          allStudents.forEach((student) => {
-            const illikValue = student.illik ? parseFloat(student.illik) : 0;
-            totalIllik += illikValue;
-            
-            const { borc } = calculateDebtAndExtra(student.odemisMeblegi, student.illik);
-            totalBorc += borc;
-          });
-          
-          return (
-            <div className="bg-blue-600 text-white rounded-lg shadow-lg p-6 mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">📊 Tələbələr</h2>
-                  <p className="text-blue-100">
-                    <strong className="text-white">{pagination.total.toLocaleString('az-AZ')}</strong> tələbə mövcuddur
-                  </p>
-                </div>
-                <div className="text-4xl">📚</div>
+        {pagination.total > 0 && totals && (
+          <div className="bg-blue-600 text-white rounded-lg shadow-lg p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">📊 Tələbələr</h2>
+                <p className="text-blue-100">
+                  <strong className="text-white">{pagination.total.toLocaleString('az-AZ')}</strong> tələbə mövcuddur
+                </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-blue-500">
-                <div className="bg-blue-700 bg-opacity-50 rounded-lg p-3">
-                  <div className="text-sm text-blue-200 mb-1">Toplam İllik</div>
-                  <div className="text-2xl font-bold">{totalIllik.toFixed(2)} ₼</div>
-                </div>
-                <div className="bg-red-700 bg-opacity-50 rounded-lg p-3">
-                  <div className="text-sm text-red-200 mb-1">Toplam Borc</div>
-                  <div className="text-2xl font-bold">{totalBorc.toFixed(2)} ₼</div>
-                </div>
+              <div className="text-4xl">📚</div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-blue-500">
+              <div className="bg-blue-700 bg-opacity-50 rounded-lg p-3">
+                <div className="text-sm text-blue-200 mb-1">Toplam İllik</div>
+                <div className="text-2xl font-bold">{totals.totalIllik.toFixed(2)} ₼</div>
+              </div>
+              <div className="bg-green-700 bg-opacity-50 rounded-lg p-3">
+                <div className="text-sm text-green-200 mb-1">Toplam Ödəniş</div>
+                <div className="text-2xl font-bold">{totals.totalOdemis.toFixed(2)} ₼</div>
+              </div>
+              <div className="bg-red-700 bg-opacity-50 rounded-lg p-3">
+                <div className="text-sm text-red-200 mb-1">Toplam Borc</div>
+                <div className="text-2xl font-bold">{totals.totalBorc.toFixed(2)} ₼</div>
               </div>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {/* Filtreler */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -393,25 +398,22 @@ function HomeContent() {
                 </span>
               )}
             </div>
-            {students.length > 0 && (() => {
-              const { totalIllik, totalBorc } = calculateTotals();
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="text-xs text-blue-600 font-medium mb-1">Toplam İllik</div>
-                    <div className="text-lg font-bold text-blue-700">{totalIllik.toFixed(2)} ₼</div>
-                  </div>
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <div className="text-xs text-red-600 font-medium mb-1">Toplam Borc</div>
-                    <div className="text-lg font-bold text-red-700">{totalBorc.toFixed(2)} ₼</div>
-                  </div>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="text-xs text-green-600 font-medium mb-1">Gösterilen</div>
-                    <div className="text-lg font-bold text-green-700">{students.length} tələbə</div>
-                  </div>
+            {totals && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="text-xs text-blue-600 font-medium mb-1">Toplam İllik</div>
+                  <div className="text-lg font-bold text-blue-700">{totals.totalIllik.toFixed(2)} ₼</div>
                 </div>
-              );
-            })()}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="text-xs text-green-600 font-medium mb-1">Toplam Ödəniş</div>
+                  <div className="text-lg font-bold text-green-700">{totals.totalOdemis.toFixed(2)} ₼</div>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="text-xs text-red-600 font-medium mb-1">Toplam Borc</div>
+                  <div className="text-lg font-bold text-red-700">{totals.totalBorc.toFixed(2)} ₼</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

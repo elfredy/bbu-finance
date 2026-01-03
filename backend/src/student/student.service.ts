@@ -269,4 +269,69 @@ export class StudentService {
 
     return { updated: result.affected || 0 };
   }
+
+  // Filtrelenmiş öğrenciler için toplam hesaplama
+  async getTotalsByFilters(filters: StudentFilter): Promise<{
+    totalIllik: number;
+    totalOdemis: number;
+    totalBorc: number;
+  }> {
+    const query = this.studentRepository.createQueryBuilder('student');
+
+    // Sadece aktif öğrencileri getir
+    query.where('student.active = :active', { active: true });
+
+    // Sadece ödemesi olan öğrencileri getir
+    if (filters.onlyWithPayments) {
+      query.andWhere('student.odemisMeblegi IS NOT NULL AND student.odemisMeblegi > 0');
+    }
+
+    if (filters.kurs) {
+      query.andWhere('student.kurs = :kurs', { kurs: filters.kurs });
+    }
+
+    if (filters.qrup) {
+      query.andWhere('student.qrup = :qrup', { qrup: filters.qrup });
+    }
+
+    if (filters.fakulte) {
+      query.andWhere('student.fakulte = :fakulte', { fakulte: filters.fakulte });
+    }
+
+    if (filters.qebulIli) {
+      query.andWhere('student.qebulIli = :qebulIli', { qebulIli: filters.qebulIli });
+    }
+
+    if (filters.fin) {
+      query.andWhere('student.fin ILIKE :fin', { fin: `%${filters.fin.toUpperCase()}%` });
+    }
+
+    // Tüm öğrencileri getir (sayfalama yok)
+    const allStudents = await query.orderBy('student.fin', 'ASC').getMany();
+
+    let totalIllik = 0;
+    let totalOdemis = 0;
+    let totalBorc = 0;
+
+    allStudents.forEach((student) => {
+      // İllik hesapla
+      const illikValue = student.illik ? parseFloat(student.illik.toString()) : 0;
+      totalIllik += illikValue;
+
+      // Ödəniş hesapla
+      const odemisValue = student.odemisMeblegi ? Number(student.odemisMeblegi) : 0;
+      totalOdemis += odemisValue;
+
+      // Borç hesapla
+      if (odemisValue < illikValue) {
+        totalBorc += (illikValue - odemisValue);
+      }
+    });
+
+    return {
+      totalIllik: parseFloat(totalIllik.toFixed(2)),
+      totalOdemis: parseFloat(totalOdemis.toFixed(2)),
+      totalBorc: parseFloat(totalBorc.toFixed(2)),
+    };
+  }
 }

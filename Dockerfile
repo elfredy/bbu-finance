@@ -22,3 +22,4 @@ EXPOSE ${PORT:-5000}
 # Start the application
 CMD ["npm", "run", "start:prod"]
 
+

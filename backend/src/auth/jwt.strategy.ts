@@ -10,7 +10,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+      secretOrKey: process.env.JWT_SECRET || (() => {
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET environment variable is required in production!');
+        }
+        return 'your-secret-key-change-in-production';
+      })(),
     });
   }
 
@@ -22,4 +27,5 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return user;
   }
 }
+
 

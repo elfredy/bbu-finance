@@ -50,6 +50,20 @@ export class StudentController {
     return this.studentService.getFilterOptions();
   }
 
+  @Get('totals')
+  // Ana sayfa - herkese açık
+  async getTotals(
+    @Query() filters: StudentFilter,
+    @Query('onlyWithPayments') onlyWithPayments?: string,
+  ) {
+    // onlyWithPayments parametresini boolean'a çevir
+    if (onlyWithPayments !== undefined) {
+      filters.onlyWithPayments = onlyWithPayments === 'true' || onlyWithPayments === '1';
+    }
+    
+    return this.studentService.getTotalsByFilters(filters);
+  }
+
   @Get('count')
   // Ana sayfa - herkese açık
   async getStudentCount() {

@@ -65,3 +65,4 @@ Deploy olduktan sonra log'larda şunları görmelisiniz:
 - ✅ `npm run build` başarılı
 - ✅ `npm run start:prod` çalışıyor
 
+

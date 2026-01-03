@@ -60,3 +60,4 @@ Eğer Root Directory'yi `backend` olarak bırakmak isterseniz:
 
 Ama şu anki çözüm (Dockerfile root'ta) daha temiz.
 
+

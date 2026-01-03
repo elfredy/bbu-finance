@@ -11,8 +11,13 @@ import { UserModule } from '../user/user.module';
     UserModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-      signOptions: { expiresIn: '7d' },
+      secret: process.env.JWT_SECRET || (() => {
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET environment variable is required in production!');
+        }
+        return 'your-secret-key-change-in-production';
+      })(),
+      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
   ],
   controllers: [AuthController],
@@ -20,4 +25,5 @@ import { UserModule } from '../user/user.module';
   exports: [AuthService],
 })
 export class AuthModule {}
+
 
