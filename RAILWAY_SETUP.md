@@ -53,6 +53,10 @@ Service'e tıklayın → "Variables" sekmesi → "Raw Editor" → Şunu ekleyin:
 NODE_ENV=production
 PORT=5000
 
+# JWT Secret - GÜÇLÜ BİR RANDOM STRING KULLANIN (en az 32 karakter)
+# Örnek: openssl rand -base64 32 komutu ile oluşturabilirsiniz
+JWT_SECRET=your-very-strong-random-secret-key-min-32-characters-long
+
 # PostgreSQL Database (Railway otomatik olarak ekler, ama kontrol edin)
 DB_HOST=${{Postgres.PGHOST}}
 DB_PORT=${{Postgres.PGPORT}}
@@ -63,6 +67,11 @@ DB_NAME=${{Postgres.PGDATABASE}}
 # CORS - Frontend URL'inizi buraya ekleyin (Vercel deploy ettikten sonra)
 ALLOWED_ORIGINS=https://your-frontend.vercel.app
 ```
+
+**ÖNEMLİ:** 
+- `JWT_SECRET` **ZORUNLUDUR** - Production'da olmadan uygulama başlamaz!
+- Güçlü bir random string kullanın (en az 32 karakter)
+- Güvenli bir şekilde oluşturmak için: `openssl rand -base64 32` komutunu kullanın
 
 **ÖNEMLİ:** 
 - Railway'da PostgreSQL service'in adı `Postgres` ise yukarıdaki gibi kullanın

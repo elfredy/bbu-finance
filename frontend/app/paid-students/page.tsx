@@ -281,16 +281,16 @@ function PaidStudentsPageContent() {
             </button>
           </div>
 
-          {/* FIN Axtarış */}
+          {/* FIN və Ad Soyad Axtarış */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              🔍 FIN ilə Axtarış
+              🔍 FIN və ya Ad Soyad ilə Axtarış
             </label>
             <input
               type="text"
               value={filters.fin}
               onChange={(e) => handleFilterChange('fin', e.target.value)}
-              placeholder="FIN kodunu daxil edin..."
+              placeholder="FIN kodu və ya ad soyad daxil edin..."
               className="w-full text-blue-950 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>

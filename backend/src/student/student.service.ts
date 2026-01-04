@@ -53,7 +53,11 @@ export class StudentService {
     }
 
     if (filters.fin) {
-      query.andWhere('student.fin ILIKE :fin', { fin: `%${filters.fin.toUpperCase()}%` });
+      const searchTerm = filters.fin.trim();
+      query.andWhere(
+        '(student.fin ILIKE :search OR student.adSoyad ILIKE :search)',
+        { search: `%${searchTerm}%` }
+      );
     }
 
     return query.skip(skip).take(take).orderBy('student.fin', 'ASC').getMany();
@@ -87,7 +91,11 @@ export class StudentService {
     }
 
     if (filters.fin) {
-      query.andWhere('student.fin ILIKE :fin', { fin: `%${filters.fin.toUpperCase()}%` });
+      const searchTerm = filters.fin.trim();
+      query.andWhere(
+        '(student.fin ILIKE :search OR student.adSoyad ILIKE :search)',
+        { search: `%${searchTerm}%` }
+      );
     }
 
     return query.getCount();
@@ -303,7 +311,11 @@ export class StudentService {
     }
 
     if (filters.fin) {
-      query.andWhere('student.fin ILIKE :fin', { fin: `%${filters.fin.toUpperCase()}%` });
+      const searchTerm = filters.fin.trim();
+      query.andWhere(
+        '(student.fin ILIKE :search OR student.adSoyad ILIKE :search)',
+        { search: `%${searchTerm}%` }
+      );
     }
 
     // Tüm öğrencileri getir (sayfalama yok)
