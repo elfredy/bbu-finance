@@ -66,3 +66,4 @@ Deploy olduktan sonra log'larda şunları görmelisiniz:
 - ✅ `npm run start:prod` çalışıyor
 
 
+

@@ -61,3 +61,4 @@ Eğer Root Directory'yi boş bırakmak isterseniz:
 Ama **Root Directory = backend** kullanmanızı öneririz (daha temiz).
 
 
+

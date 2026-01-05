@@ -14,7 +14,7 @@ export class StudentController {
   ) {}
 
   @Get()
-  // Ana sayfa - herkese açık (login gerekmez)
+  @UseGuards(JwtAuthGuard) // Authentication gerekli - güvenlik için
   async getStudents(
     @Query() filters: StudentFilter,
     @Query('page') page: string = '1',
@@ -45,13 +45,13 @@ export class StudentController {
   }
 
   @Get('filter-options')
-  // Ana sayfa - herkese açık
+  @UseGuards(JwtAuthGuard) // Authentication gerekli - güvenlik için
   async getFilterOptions() {
     return this.studentService.getFilterOptions();
   }
 
   @Get('totals')
-  // Ana sayfa - herkese açık
+  @UseGuards(JwtAuthGuard) // Authentication gerekli - güvenlik için
   async getTotals(
     @Query() filters: StudentFilter,
     @Query('onlyWithPayments') onlyWithPayments?: string,
@@ -65,7 +65,7 @@ export class StudentController {
   }
 
   @Get('count')
-  // Ana sayfa - herkese açık
+  @UseGuards(JwtAuthGuard) // Authentication gerekli - güvenlik için
   async getStudentCount() {
     const count = await this.studentService.getCount();
     return { count, message: `Veritabanında ${count} öğrenci kaydı var` };
@@ -123,7 +123,7 @@ export class StudentController {
   }
 
   @Get(':id/payments')
-  // Ana sayfa - herkese açık
+  @UseGuards(JwtAuthGuard) // Authentication gerekli - güvenlik için
   async getStudentPayments(@Param('id') id: string) {
     const studentId = parseInt(id);
     if (isNaN(studentId)) {

@@ -114,3 +114,4 @@ Deploy sonrası log'ları kontrol edin:
    - Service → Deployments → Latest → View logs
    - Hata mesajını paylaşın
 
+

@@ -39,9 +39,13 @@ export class UserService {
     if (!superadmin) {
       // Güvenli şifre: SuperAdmin@2024!Secure
       await this.createUser('superadmin', 'SuperAdmin@2024!Secure', UserRole.SUPERADMIN);
-      console.log('✅ Superadmin kullanıcısı oluşturuldu');
-      console.log('   Username: superadmin');
-      console.log('   Password: SuperAdmin@2024!Secure');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ Superadmin kullanıcısı oluşturuldu');
+        console.log('   Username: superadmin');
+        // Production'da şifre log'lanmaz - güvenlik riski!
+      } else {
+        console.log('✅ Superadmin kullanıcısı oluşturuldu');
+      }
     }
 
     // bbu-finance kullanıcısını kontrol et ve oluştur
@@ -49,9 +53,13 @@ export class UserService {
     if (!bbuFinance) {
       // Güvenli şifre: BBUFinance@2024!Access
       await this.createUser('bbu-finance', 'BBUFinance@2024!Access', UserRole.BBU_FINANCE);
-      console.log('✅ bbu-finance kullanıcısı oluşturuldu');
-      console.log('   Username: bbu-finance');
-      console.log('   Password: BBUFinance@2024!Access');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ bbu-finance kullanıcısı oluşturuldu');
+        console.log('   Username: bbu-finance');
+        // Production'da şifre log'lanmaz - güvenlik riski!
+      } else {
+        console.log('✅ bbu-finance kullanıcısı oluşturuldu');
+      }
     }
   }
 }

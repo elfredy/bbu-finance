@@ -37,12 +37,17 @@ export class ExcelService {
       }
 
       console.log(`📊 Excel dosyasından ${jsonData.length} satır okundu`);
-      console.log('📋 İlk satır örneği:', jsonData[0]);
+      // Production'da sensitive data log'lanmaz
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📋 İlk satır örneği:', jsonData[0]);
+      }
 
       // İlk satırdan kolon isimlerini al
       const firstRow = jsonData[0] as any;
       const columnNames = Object.keys(firstRow);
-      console.log('📝 Kolon isimleri:', columnNames);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📝 Kolon isimleri:', columnNames);
+      }
 
       // Kolon isimlerini normalize et (büyük/küçük harf, boşluk, Türkçe karakter)
       const normalizeColumnName = (name: string): string => {
@@ -180,12 +185,17 @@ export class ExcelService {
       }
 
       console.log(`📊 Payment Excel dosyasından ${jsonData.length} satır okundu`);
-      console.log('📋 İlk satır örneği:', jsonData[0]);
+      // Production'da sensitive data log'lanmaz
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📋 İlk satır örneği:', jsonData[0]);
+      }
 
       // İlk satırdan kolon isimlerini al
       const firstRow = jsonData[0] as any;
       const columnNames = Object.keys(firstRow);
-      console.log('📝 Kolon isimleri:', columnNames);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📝 Kolon isimleri:', columnNames);
+      }
 
       // Kolon isimlerini normalize et
       const normalizeColumnName = (name: string): string => {
@@ -496,6 +506,7 @@ export class ExcelService {
       }
 
       console.log(`📊 Payment JSON dosyasından ${jsonData.length} kayıt okundu`);
+      // Production'da sensitive data log'lanmaz
 
       // FIN bazlı ödeme verilerini topla
       const paymentMap = new Map<string, Array<{ 

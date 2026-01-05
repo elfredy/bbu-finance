@@ -102,3 +102,4 @@ Eğer Railway ayarları çalışmıyorsa, proje root'una bir `railway.json` dosy
 - [ ] Log'larda hala `cd backend` görünüyor mu?
 
 
+

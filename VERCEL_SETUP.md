@@ -71,3 +71,4 @@ Deploy tamamlandıktan sonra:
 4. `ALLOWED_ORIGINS` değerini frontend URL'iniz ile güncelleyin
 
 
+
